@@ -3,24 +3,52 @@
 from ..persistence import repositories
 from ..utilities import translator
 from django.contrib.auth import get_user
+import requests
+
+# Definimos la URL base de la API de Rick & Morty
+BASE_URL = "https://rickandmortyapi.com/api/character/"
 
 def getAllImages(input=None):
-    # obtiene un listado de datos "crudos" desde la API, usando a transport.py.
-    json_collection = []
+    """
+    Obtiene un listado de datos "crudos" desde la API, usando la URL base.
+    Si se pasa un input, filtra los resultados por nombre.
+    """
+    url = BASE_URL
+    if input:
+        url += f"?name={input}"  # Filtrar por nombre si hay un input
 
-    # recorre cada dato crudo de la colección anterior, lo convierte en una Card y lo agrega a images.
-    images = []
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Verificar si la respuesta fue exitosa
+        data = response.json()       # Obtener el JSON de la respuesta
 
+        # Acceder a la lista de personajes y transformar en lista de imágenes
+        characters = data.get("results", [])
+    except requests.exceptions.RequestException as e:
+        print(f"Error al hacer la solicitud: {e}")
+        return []  # Devolver una lista vacía si ocurre un error
+
+    # Procesar y devolver los datos en un formato adecuado para el template
+    images = [
+        {
+            "name": char["name"],
+            "image": char["image"],
+            "status": char["status"],
+            "location": char["location"]["name"],
+            "first_episode": char["episode"][0]  # Solo el primer episodio
+        }
+        for char in characters
+    ]
     return images
 
-# añadir favoritos (usado desde el template 'home.html')
+# Añadir favoritos (usado desde el template 'home.html')
 def saveFavourite(request):
     fav = '' # transformamos un request del template en una Card.
     fav.user = '' # le asignamos el usuario correspondiente.
 
     return repositories.saveFavourite(fav) # lo guardamos en la base.
 
-# usados desde el template 'favourites.html'
+# Usados desde el template 'favourites.html'
 def getAllFavourites(request):
     if not request.user.is_authenticated:
         return []
