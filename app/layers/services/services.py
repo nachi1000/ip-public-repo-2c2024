@@ -8,25 +8,28 @@ import requests
 # Definimos la URL base de la API de Rick & Morty
 BASE_URL = "https://rickandmortyapi.com/api/character/"
 
-def getAllImages(input=None):
+def getAllImages(input=None, page=1):
     """
     Obtiene un listado de datos "crudos" desde la API, usando la URL base.
     Si se pasa un input, filtra los resultados por nombre.
     """
     url = BASE_URL
+    params = {'page': page}
     if input:
-        url += f"?name={input}"  # Filtrar por nombre si hay un input
+        params['name'] = input  # Agregar el filtro por nombre
 
     try:
-        response = requests.get(url)
+        response = requests.get(url, params=params)
         response.raise_for_status()  # Verificar si la respuesta fue exitosa
         data = response.json()       # Obtener el JSON de la respuesta
 
         # Acceder a la lista de personajes y transformar en lista de imágenes
         characters = data.get("results", [])
+        total_pages = data.get("info", {}).get("pages", 1)  # Obtener el número total de páginas
+
     except requests.exceptions.RequestException as e:
         print(f"Error al hacer la solicitud: {e}")
-        return []  # Devolver una lista vacía si ocurre un error
+        return [], 1  # Devolver una lista vacía y 1 página si ocurre un error
 
     # Procesar y devolver los datos en un formato adecuado para el template
     images = [
@@ -39,7 +42,7 @@ def getAllImages(input=None):
         }
         for char in characters
     ]
-    return images
+    return images, total_pages
 
 # Añadir favoritos (usado desde el template 'home.html')
 def saveFavourite(request):
