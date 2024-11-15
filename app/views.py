@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from .layers.services import services
 
-
+# MODIFICACION
 
 def index_page(request):
     return render(request, 'index.html')
